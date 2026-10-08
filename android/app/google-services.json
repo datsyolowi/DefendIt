@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "382295266243",
+    "project_id": "thesis-track-6a918",
+    "storage_bucket": "thesis-track-6a918.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:382295266243:android:6c6f38c964a32e37d7e376",
+        "android_client_info": {
+          "package_name": "com.example.thesis_track"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIiIJ-1DZ_QS5rc5B7AS2U9VP0tQ6Aj_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:382295266243:android:9679b08cc4d03045d7e376",
+        "android_client_info": {
+          "package_name": "com.lowi.thesistrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIiIJ-1DZ_QS5rc5B7AS2U9VP0tQ6Aj_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
