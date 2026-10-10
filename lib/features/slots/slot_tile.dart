@@ -31,11 +31,13 @@ class SlotTile extends StatelessWidget {
     required this.slot,
     this.subtitle,
     this.trailing,
+    this.onTap,
   });
 
   final Slot slot;
   final String? subtitle;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -43,48 +45,55 @@ class SlotTile extends StatelessWidget {
     final accent = slot.isBooked ? AppColors.indigo : AppColors.success;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 44,
-              decoration: BoxDecoration(
-                  color: accent, borderRadius: BorderRadius.circular(4)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(DateFormatters.range(slot.start, slot.durationMins),
-                      style: text.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${slot.durationMins} min${subtitle != null ? ' · $subtitle' : ''}',
-                    style: text.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 44,
+                decoration: BoxDecoration(
+                    color: accent, borderRadius: BorderRadius.circular(4)),
               ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(DateFormatters.range(slot.start, slot.durationMins),
+                        style: text.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${slot.durationMins} min${subtitle != null ? ' · $subtitle' : ''}',
+                      style: text.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              child: Text(
-                slot.isBooked ? 'Booked' : 'Open',
-                style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600, color: accent),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  slot.isBooked ? 'Booked' : 'Open',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: accent),
+                ),
               ),
-            ),
-            if (trailing != null) trailing! else const SizedBox(width: 8),
-          ],
+              if (trailing != null) trailing! else const SizedBox(width: 8),
+            ],
+          ),
         ),
       ),
     );

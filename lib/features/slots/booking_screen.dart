@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositories/consultation_repository.dart';
+import '../consultations/consultation_notes_screen.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/confirm_dialog.dart';
 import '../../core/widgets/empty_state.dart';
@@ -130,6 +132,20 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
+  Future<void> _openConsultation(Slot slot) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    final repo = context.read<ConsultationRepository>();
+    if (await repo.exists(slot.id)) {
+      if (!mounted) return;
+      nav.push(MaterialPageRoute(
+          builder: (_) => ConsultationScreen(consultationId: slot.id)));
+    } else {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Notes will appear here after your adviser starts this consultation.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = const Text('Schedule');
@@ -225,13 +241,16 @@ class _BookingScreenState extends State<BookingScreen> {
                 )
                     : SlotDayList(
                   slots: mine,
-                  itemBuilder: (slot) => SlotTile(
-                    slot: slot,
-                    subtitle: '${slot.bookedGroupName} · ${slot.adviserName}',
-                    trailing: IconButton(
-                      tooltip: 'Cancel booking',
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => _cancel(slot),
+                  itemBuilder: (slot) => InkWell(
+                    onTap: () => _openConsultation(slot),
+                    child: SlotTile(
+                      slot: slot,
+                      subtitle: '${slot.bookedGroupName} · ${slot.adviserName}',
+                      trailing: IconButton(
+                        tooltip: 'Cancel booking',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => _cancel(slot),
+                      ),
                     ),
                   ),
                 ),

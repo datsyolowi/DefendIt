@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/sync/sync_service.dart';
 import '../../data/models/app_user.dart';
 import '../auth/auth_provider.dart';
 import '../groups/groups_screen.dart';
@@ -18,17 +19,26 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   late final List<Widget> _pages;
+  late final SyncService _sync;
 
   @override
   void initState() {
     super.initState();
-    final isAdviser =
-        context.read<AuthProvider>().profile?.role == UserRole.adviser;
+    final user = context.read<AuthProvider>().profile!;
+    _sync = context.read<SyncService>()..start(user);
+
+    final isAdviser = user.role == UserRole.adviser;
     _pages = [
-      const TodayTimelineScreen(),
+      TodayTimelineScreen(onOpenSchedule: () => setState(() => _index = 1)),
       isAdviser ? const AdviserAvailabilityScreen() : const BookingScreen(),
       const GroupsScreen(),
     ];
+  }
+
+  @override
+  void dispose() {
+    _sync.stop();
+    super.dispose();
   }
 
   @override

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositories/consultation_repository.dart';
+import '../consultations/consultation_notes_screen.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/confirm_dialog.dart';
 import '../../core/widgets/empty_state.dart';
@@ -67,6 +69,22 @@ class _AdviserAvailabilityScreenState extends State<AdviserAvailabilityScreen> {
     );
   }
 
+  Future<void> _openConsultation(Slot slot) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    try {
+      final c = await context.read<ConsultationRepository>().openForAdviser(slot);
+      if (!mounted) return;
+      nav.push(MaterialPageRoute(
+          builder: (_) => ConsultationScreen(consultationId: c.id)));
+    } on ConsultationFailure catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not open the consultation.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,6 +123,7 @@ class _AdviserAvailabilityScreenState extends State<AdviserAvailabilityScreen> {
               subtitle: slot.isBooked
                   ? '${slot.bookedGroupName} (${slot.bookedByName})'
                   : null,
+              onTap: slot.isBooked ? () => _openConsultation(slot) : null,
               trailing: PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (v) =>

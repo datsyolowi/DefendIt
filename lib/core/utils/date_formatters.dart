@@ -21,4 +21,30 @@ class DateFormatters {
     }
     return DateFormat('EEEE, MMM d').format(d);
   }
+
+  static String greeting([DateTime? now]) {
+    final h = (now ?? DateTime.now()).hour;
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  /// Short countdown label for the hero card.
+  static String until(DateTime start, int durationMins) {
+    final now = DateTime.now();
+    final end = start.add(Duration(minutes: durationMins));
+    if (!now.isBefore(start) && now.isBefore(end)) return 'Happening now';
+
+    final diff = start.difference(now);
+    if (diff.inMinutes < 60) {
+      final mins = diff.inMinutes < 1 ? 1 : diff.inMinutes;
+      return 'In $mins min';
+    }
+    if (sameDay(start, now)) return 'In ${diff.inHours} h';
+
+    final days = DateTime(start.year, start.month, start.day)
+        .difference(DateTime(now.year, now.month, now.day))
+        .inDays;
+    return days == 1 ? 'Tomorrow' : 'In $days days';
+  }
 }
