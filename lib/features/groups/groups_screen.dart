@@ -316,7 +316,7 @@ class _GroupCard extends StatelessWidget {
             const SizedBox(height: 6),
             _InfoRow(
               icon: Icons.groups_rounded,
-              text: group.memberNames.values.join(', '),
+              text: group.rosterLabel,
             ),
             if (showCode) ...[
               const SizedBox(height: 12),
@@ -364,6 +364,7 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final count = group.roster.length;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -376,8 +377,7 @@ class _RequestCard extends StatelessWidget {
             const SizedBox(height: 12),
             _InfoRow(
               icon: Icons.groups_rounded,
-              text:
-              '${group.memberUids.length} member${group.memberUids.length == 1 ? '' : 's'}: ${group.memberNames.values.join(', ')}',
+              text: '$count member${count == 1 ? '' : 's'}: ${group.rosterLabel}',
             ),
             const SizedBox(height: 14),
             SizedBox(
@@ -404,13 +404,18 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.muted),
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(icon, size: 18, color: AppColors.muted),
+        ),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
             style: Theme.of(context).textTheme.bodySmall,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
         ),

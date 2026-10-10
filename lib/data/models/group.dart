@@ -6,7 +6,9 @@ class Group {
     required this.code,
     required this.memberUids,
     required this.memberNames,
+    required this.roster,
     required this.createdAt,
+    this.leaderUid,
     this.adviserUid,
     this.adviserName,
   });
@@ -15,11 +17,22 @@ class Group {
   final String name;
   final String thesisTitle;
   final String code;
-  final List<String> memberUids;
+  final List<String> memberUids; // accounts with access to this group
   final Map<String, String> memberNames; // uid -> display name
-  final int createdAt; // millis since epoch (easy to store in sqflite later)
+  final List<String> roster; // official member names; roster.first = leader
+  final int createdAt; // millis since epoch
+  final String? leaderUid;
   final String? adviserUid;
   final String? adviserName;
+
+  /// "Ana Cruz (leader), Ben Lim, Carla Reyes"
+  String get rosterLabel {
+    if (roster.isEmpty) return '';
+    return [
+      '${roster.first} (leader)',
+      ...roster.skip(1),
+    ].join(', ');
+  }
 
   Map<String, dynamic> toMap() => {
     'name': name,
@@ -27,22 +40,35 @@ class Group {
     'code': code,
     'memberUids': memberUids,
     'memberNames': memberNames,
+    'roster': roster,
     'createdAt': createdAt,
+    'leaderUid': leaderUid,
     'adviserUid': adviserUid,
     'adviserName': adviserName,
   };
 
-  factory Group.fromMap(Map<String, dynamic> m, String id) => Group(
-    id: id,
-    name: (m['name'] as String?) ?? '',
-    thesisTitle: (m['thesisTitle'] as String?) ?? '',
-    code: (m['code'] as String?) ?? '',
-    memberUids: List<String>.from(m['memberUids'] ?? const []),
-    memberNames: Map<String, String>.from(
+  factory Group.fromMap(Map<String, dynamic> m, String id) {
+    final uids = List<String>.from(m['memberUids'] ?? const []);
+    final names = Map<String, String>.from(
         (m['memberNames'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ??
-            const {}),
-    createdAt: (m['createdAt'] as int?) ?? 0,
-    adviserUid: m['adviserUid'] as String?,
-    adviserName: m['adviserName'] as String?,
-  );
+            const {});
+    final roster = m['roster'] == null
+        ? names.values.toList() // older groups created before rosters
+        : List<String>.from(m['roster']);
+
+    return Group(
+      id: id,
+      name: (m['name'] as String?) ?? '',
+      thesisTitle: (m['thesisTitle'] as String?) ?? '',
+      code: (m['code'] as String?) ?? '',
+      memberUids: uids,
+      memberNames: names,
+      roster: roster,
+      createdAt: (m['createdAt'] as int?) ?? 0,
+      leaderUid:
+      (m['leaderUid'] as String?) ?? (uids.isNotEmpty ? uids.first : null),
+      adviserUid: m['adviserUid'] as String?,
+      adviserName: m['adviserName'] as String?,
+    );
+  }
 }

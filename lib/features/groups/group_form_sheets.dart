@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/primary_button.dart';
@@ -50,6 +51,8 @@ class _SheetFrame extends StatelessWidget {
   }
 }
 
+// ───────────────────────── Create group ─────────────────────────
+
 class _CreateGroupSheet extends StatefulWidget {
   const _CreateGroupSheet({required this.user});
   final AppUser user;
@@ -62,14 +65,38 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _title = TextEditingController();
+  late final List<TextEditingController> _members;
   bool _busy = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Row 0 is the leader (prefilled from the Google account), row 1 a teammate.
+    _members = [
+      TextEditingController(text: widget.user.name),
+      TextEditingController(),
+    ];
+  }
 
   @override
   void dispose() {
     _name.dispose();
     _title.dispose();
+    for (final c in _members) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  void _addMember() {
+    if (_members.length >= Limits.maxGroupMembers) return;
+    setState(() => _members.add(TextEditingController()));
+  }
+
+  void _removeMember(int index) {
+    if (index == 0 || _members.length <= Limits.minGroupMembers) return;
+    setState(() => _members.removeAt(index).dispose());
   }
 
   Future<void> _submit() async {
@@ -83,6 +110,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
         student: widget.user,
         name: _name.text,
         thesisTitle: _title.text,
+        members: _members.map((c) => c.text).toList(),
       );
       if (mounted) Navigator.pop(context);
     } on GroupFailure catch (e) {
@@ -96,11 +124,13 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return _SheetFrame(
       title: 'Create a group',
       child: Form(
         key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextFormField(
               controller: _name,
@@ -119,12 +149,53 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
               validator: (v) =>
                   Validators.text(v, label: 'Thesis title', min: 5, max: 160),
             ),
+            const SizedBox(height: 22),
+            Text('Members (${_members.length}/${Limits.maxGroupMembers})',
+                style: text.titleMedium),
+            const SizedBox(height: 4),
+            Text('You are the group leader. List your teammates by full name.',
+                style: text.bodySmall),
+            const SizedBox(height: 12),
+            for (var i = 0; i < _members.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _members[i],
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          labelText:
+                          i == 0 ? 'Your name (leader)' : 'Member ${i + 1}',
+                        ),
+                        validator: (v) =>
+                            Validators.text(v, label: 'Name', min: 2, max: 60),
+                      ),
+                    ),
+                    if (i > 0 && _members.length > Limits.minGroupMembers)
+                      IconButton(
+                        tooltip: 'Remove',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => _removeMember(i),
+                      )
+                    else
+                      const SizedBox(width: 48),
+                  ],
+                ),
+              ),
+            if (_members.length < Limits.maxGroupMembers)
+              TextButton.icon(
+                onPressed: _addMember,
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                label: const Text('Add member'),
+              ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!,
-                  style: const TextStyle(color: AppColors.error)),
+              const SizedBox(height: 8),
+              Text(_error!, style: const TextStyle(color: AppColors.error)),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             PrimaryButton(
                 label: 'Create group', loading: _busy, onPressed: _submit),
           ],
@@ -133,6 +204,8 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
     );
   }
 }
+
+// ───────────────────────── Join group (students) ─────────────────────────
 
 class _JoinGroupSheet extends StatefulWidget {
   const _JoinGroupSheet({required this.user});
@@ -176,9 +249,8 @@ class _JoinGroupSheetState extends State<_JoinGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdviser = widget.user.role == UserRole.adviser;
     return _SheetFrame(
-      title: isAdviser ? 'Advise a group' : 'Join a group',
+      title: 'Join a group',
       child: Form(
         key: _formKey,
         child: Column(
@@ -192,14 +264,11 @@ class _JoinGroupSheetState extends State<_JoinGroupSheet> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 4),
-              Text(_error!,
-                  style: const TextStyle(color: AppColors.error)),
+              Text(_error!, style: const TextStyle(color: AppColors.error)),
             ],
             const SizedBox(height: 16),
             PrimaryButton(
-                label: isAdviser ? 'Become adviser' : 'Join group',
-                loading: _busy,
-                onPressed: _submit),
+                label: 'Join group', loading: _busy, onPressed: _submit),
           ],
         ),
       ),

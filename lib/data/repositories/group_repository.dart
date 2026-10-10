@@ -47,8 +47,24 @@ class GroupRepository {
     required AppUser student,
     required String name,
     required String thesisTitle,
+    required List<String> members, // leader first
   }) async {
+    final cleaned = members.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
+
+    if (cleaned.length < Limits.minGroupMembers ||
+        cleaned.length > Limits.maxGroupMembers) {
+      throw GroupFailure(
+          'A group needs ${Limits.minGroupMembers} to ${Limits.maxGroupMembers} members.');
+    }
+    final lower = cleaned.map((m) => m.toLowerCase()).toSet();
+    if (lower.length != cleaned.length) {
+      throw GroupFailure('Each member name must be different.');
+    }
+    if (student.role != UserRole.student) {
+      throw GroupFailure('Only students can create groups.');
+    }
     await _requireOnline();
+
     final ref = _col.doc();
     final group = Group(
       id: ref.id,
@@ -57,6 +73,8 @@ class GroupRepository {
       code: await _uniqueCode(),
       memberUids: [student.uid],
       memberNames: {student.uid: student.name},
+      roster: cleaned,
+      leaderUid: student.uid,
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     await ref.set(group.toMap());
