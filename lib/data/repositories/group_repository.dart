@@ -46,11 +46,12 @@ class GroupRepository {
   Future<Group> createGroup({
     required AppUser student,
     required String name,
+    required String section,
     required String thesisTitle,
     required List<String> members, // leader first
-    required String section,          // add next to the other required params
   }) async {
-    final cleaned = members.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
+    final cleaned =
+    members.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
 
     if (cleaned.length < Limits.minGroupMembers ||
         cleaned.length > Limits.maxGroupMembers) {
@@ -66,11 +67,23 @@ class GroupRepository {
     }
     await _requireOnline();
 
-    final ref = _col.doc();
+    // Already in a group, as leader or as a member?
+    final existing = await _col
+        .where('memberUids', arrayContains: student.uid)
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) {
+      throw GroupFailure(
+          'You already belong to a group. Each student can only be in one group.');
+    }
+
+    // The document id is the leader's uid, so a second group for the same
+    // leader is impossible, even with two quick taps or two devices.
+    final ref = _col.doc(student.uid);
     final group = Group(
       id: ref.id,
       name: name.trim(),
-      section: section.trim(),        // add inside the Group( ... ) constructor call
+      section: section.trim(),
       thesisTitle: thesisTitle.trim(),
       code: await _uniqueCode(),
       memberUids: [student.uid],
@@ -79,7 +92,14 @@ class GroupRepository {
       leaderUid: student.uid,
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
-    await ref.set(group.toMap());
+
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (snap.exists) {
+        throw GroupFailure('You have already created a group.');
+      }
+      tx.set(ref, group.toMap());
+    });
     return group;
   }
 
@@ -89,16 +109,22 @@ class GroupRepository {
       throw GroupFailure('Only students join groups with a code.');
     }
     await _requireOnline();
+
     final code = rawCode.trim().toUpperCase();
     final snap = await _col.where('code', isEqualTo: code).limit(1).get();
     if (snap.docs.isEmpty) {
       throw GroupFailure('No group found with that code.');
     }
     final doc = snap.docs.first;
-    final group = Group.fromMap(doc.data(), doc.id);
-    if (group.memberUids.contains(user.uid)) {
-      throw GroupFailure('You are already in this group.');
+
+    final mine =
+    await _col.where('memberUids', arrayContains: user.uid).limit(1).get();
+    if (mine.docs.isNotEmpty) {
+      throw GroupFailure(mine.docs.first.id == doc.id
+          ? 'You are already in this group.'
+          : 'You already belong to a group. Each student can only be in one group.');
     }
+
     await doc.reference.update({
       'memberUids': FieldValue.arrayUnion([user.uid]),
       'memberNames.${user.uid}': user.name,

@@ -48,41 +48,51 @@ class _StudentGroupsState extends State<_StudentGroups> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Groups'),
-        actions: [
-          IconButton(
-            tooltip: 'Join with code',
-            icon: const Icon(Icons.vpn_key_rounded),
-            onPressed: () => showJoinGroupSheet(context, widget.user),
+    return StreamBuilder<List<Group>>(
+      stream: _stream,
+      builder: (context, snap) {
+        final groups = snap.data;
+        final canAdd = groups != null && groups.isEmpty;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('My group'),
+            actions: [
+              if (canAdd)
+                IconButton(
+                  tooltip: 'Join with code',
+                  icon: const Icon(Icons.vpn_key_rounded),
+                  onPressed: () => showJoinGroupSheet(context, widget.user),
+                ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.amber,
-        foregroundColor: AppColors.ink,
-        onPressed: () => showCreateGroupSheet(context, widget.user),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New group'),
-      ),
-      body: StreamBuilder<List<Group>>(
-        stream: _stream,
-        builder: (context, snap) {
-          if (snap.hasError) {
-            return const ErrorView(
-                message: 'Could not load your groups. Check your connection.');
-          }
-          if (!snap.hasData) return const LoadingView();
-          return _GroupList(
-            groups: snap.data!,
-            showCode: true,
-            emptyTitle: 'No groups yet',
-            emptyMessage:
-            'Create a group for your thesis team, or join one with a code. Advisers will see it and can accept it.',
-          );
-        },
-      ),
+          floatingActionButton: canAdd
+              ? FloatingActionButton.extended(
+            backgroundColor: AppColors.amber,
+            foregroundColor: AppColors.ink,
+            onPressed: () => showCreateGroupSheet(context, widget.user),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Create group'),
+          )
+              : null,
+          body: Builder(
+            builder: (_) {
+              if (snap.hasError) {
+                return const ErrorView(
+                    message: 'Could not load your group. Check your connection.');
+              }
+              if (groups == null) return const LoadingView();
+              return _GroupList(
+                groups: groups,
+                showCode: true,
+                emptyTitle: 'No group yet',
+                emptyMessage:
+                'Create your thesis group as its leader, or join your leader\'s group with their code. Each student can only be in one group.',
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
