@@ -49,6 +49,7 @@ class TitleRepository {
     required Group group,
     required String title,
     required String description,
+    required String purpose,
   }) async {
     _requireMember(student, group);
     if (!await isOnline()) throw TitleFailure(_offline);
@@ -60,6 +61,7 @@ class TitleRepository {
       groupId: group.id,
       title: title.trim(),
       description: description.trim(),
+      purpose: purpose.trim(),
       status: TitleStatus.pending,
       createdByUid: student.uid,
       createdByName: student.name,
@@ -75,6 +77,7 @@ class TitleRepository {
     required String titleId,
     required String title,
     required String description,
+    required String purpose,
   }) async {
     _requireMember(student, group);
     if (!await isOnline()) throw TitleFailure(_offline);
@@ -91,6 +94,7 @@ class TitleRepository {
       tx.update(ref, {
         'title': title.trim(),
         'description': description.trim(),
+        'purpose': purpose.trim(),
         'status': TitleStatus.pending.name,
         'comment': null,
         'reviewedByName': null,

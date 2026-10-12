@@ -35,6 +35,7 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _desc;
+  late final TextEditingController _purpose;
   bool _busy = false;
   String? _error;
 
@@ -45,12 +46,14 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
     super.initState();
     _title = TextEditingController(text: widget.existing?.title);
     _desc = TextEditingController(text: widget.existing?.description);
+    _purpose = TextEditingController(text: widget.existing?.purpose);
   }
 
   @override
   void dispose() {
     _title.dispose();
     _desc.dispose();
+    _purpose.dispose();
     super.dispose();
   }
 
@@ -70,6 +73,7 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
           titleId: widget.existing!.id,
           title: _title.text,
           description: _desc.text,
+          purpose: _purpose.text,
         );
       } else {
         await repo.addTitle(
@@ -77,6 +81,7 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
           group: widget.group,
           title: _title.text,
           description: _desc.text,
+          purpose: _purpose.text,
         );
       }
       if (mounted) Navigator.pop(context);
@@ -129,7 +134,7 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
               TextFormField(
                 controller: _title,
                 decoration: const InputDecoration(labelText: 'Proposed title'),
-                textCapitalization: TextCapitalization.words,
+                textCapitalization: TextCapitalization.sentences,
                 maxLines: 2,
                 validator: (v) =>
                     Validators.text(v, label: 'Title', min: 5, max: 150),
@@ -139,7 +144,7 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
                 controller: _desc,
                 decoration: const InputDecoration(
                   labelText: 'Description',
-                  hintText: 'What is the study about and why does it matter?',
+                  hintText: 'What is the study about?',
                   alignLabelWithHint: true,
                 ),
                 textCapitalization: TextCapitalization.sentences,
@@ -147,6 +152,20 @@ class _TitleFormSheetState extends State<_TitleFormSheet> {
                 maxLines: 6,
                 validator: (v) =>
                     Validators.text(v, label: 'Description', min: 10, max: 500),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _purpose,
+                decoration: const InputDecoration(
+                  labelText: 'Purpose',
+                  hintText: 'What does the study aim to achieve or solve?',
+                  alignLabelWithHint: true,
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                minLines: 2,
+                maxLines: 5,
+                validator: (v) =>
+                    Validators.text(v, label: 'Purpose', min: 10, max: 400),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),

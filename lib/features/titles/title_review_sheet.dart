@@ -116,6 +116,11 @@ class _TitleReviewSheetState extends State<_TitleReviewSheet> {
                     Text(widget.idea.title, style: text.titleMedium),
                     const SizedBox(height: 6),
                     Text(widget.idea.description, style: text.bodySmall),
+                    if (widget.idea.purpose.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text('Purpose: ${widget.idea.purpose}',
+                          style: text.bodySmall),
+                    ],
                   ],
                 ),
               ),

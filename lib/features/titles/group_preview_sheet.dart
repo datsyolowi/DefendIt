@@ -197,6 +197,13 @@ class _TitleCard extends StatelessWidget {
                     style: text.bodySmall,
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis),
+                if (idea.purpose.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text('Purpose: ${idea.purpose}',
+                      style: text.bodySmall,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis),
+                ],
               ],
             ),
           ),

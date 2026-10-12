@@ -243,8 +243,20 @@ class _TitleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+                  Text('Description',
+                      style: text.bodySmall
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
                   Text(idea.description, style: text.bodyMedium),
+                  if (idea.purpose.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text('Purpose',
+                        style: text.bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(idea.purpose, style: text.bodyMedium),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     children: [

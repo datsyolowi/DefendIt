@@ -29,6 +29,7 @@ class TitleIdea {
     required this.groupId,
     required this.title,
     required this.description,
+    required this.purpose,
     required this.status,
     required this.createdByUid,
     required this.createdByName,
@@ -43,6 +44,7 @@ class TitleIdea {
   final String groupId;
   final String title;
   final String description;
+  final String purpose;
   final TitleStatus status;
   final String createdByUid;
   final String createdByName;
@@ -64,6 +66,7 @@ class TitleIdea {
     'groupId': groupId,
     'title': title,
     'description': description,
+    'purpose': purpose,
     'status': status.name,
     'createdByUid': createdByUid,
     'createdByName': createdByName,
@@ -79,6 +82,7 @@ class TitleIdea {
     groupId: (m['groupId'] as String?) ?? '',
     title: (m['title'] as String?) ?? '',
     description: (m['description'] as String?) ?? '',
+    purpose: (m['purpose'] as String?) ?? '',
     status: TitleStatus.fromName(m['status'] as String?),
     createdByUid: (m['createdByUid'] as String?) ?? '',
     createdByName: (m['createdByName'] as String?) ?? '',
