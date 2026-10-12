@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../titles/group_preview_sheet.dart';
+import '../titles/title_ideas_screen.dart';
 import '../../core/constants/limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/empty_state.dart';
@@ -209,14 +211,18 @@ class _RequestsTab extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) => _RequestCard(
             group: groups[i],
-            onAccept: () => _accept(context, groups[i]),
+            onView: () => showGroupPreviewSheet(
+              context,
+              group: groups[i],
+              onAccept: () => _accept(context, groups[i]),
+            ),
           ),
         );
       },
     );
   }
 
-  Future<void> _accept(BuildContext context, Group group) async {
+  Future<bool> _accept(BuildContext context, Group group) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -233,18 +239,21 @@ class _RequestsTab extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !context.mounted) return false;
 
     final messenger = ScaffoldMessenger.of(context);
     try {
       await context.read<GroupRepository>().acceptGroup(user, group.id);
       messenger.showSnackBar(
           SnackBar(content: Text('You are now advising ${group.name}')));
+      return true;
     } on GroupFailure catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      return false;
     } catch (_) {
       messenger.showSnackBar(
           const SnackBar(content: Text('Could not accept the group.')));
+      return false;
     }
   }
 }
@@ -291,65 +300,91 @@ class _GroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final hasAdviser = group.adviserName != null;
+    final hasSection = group.section != null && group.section!.isNotEmpty;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(group.name, style: text.titleMedium)),
-                _StatusChip(awaiting: !hasAdviser),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(group.thesisTitle, style: text.bodyMedium),
-            const SizedBox(height: 12),
-            _InfoRow(
-              icon: Icons.person_pin_rounded,
-              text: hasAdviser
-                  ? 'Adviser: ${group.adviserName}'
-                  : 'Awaiting adviser',
-            ),
-            const SizedBox(height: 6),
-            _InfoRow(
-              icon: Icons.groups_rounded,
-              text: group.rosterLabel,
-            ),
-            if (showCode) ...[
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => TitleIdeasScreen(group: group),
+        )),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(group.name, style: text.titleMedium)),
+                  _StatusChip(awaiting: !hasAdviser),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(group.thesisTitle, style: text.bodyMedium),
               const SizedBox(height: 12),
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: group.code));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Group code copied')),
-                  );
-                },
-                child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.indigoTint,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Teammate code: ${group.code}',
-                          style: text.titleMedium?.copyWith(
-                              color: AppColors.indigo, letterSpacing: 1.2)),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.copy_rounded,
-                          size: 16, color: AppColors.indigo),
-                    ],
+              if (hasSection) ...[
+                _InfoRow(icon: Icons.class_rounded, text: group.section!),
+                const SizedBox(height: 6),
+              ],
+              _InfoRow(
+                icon: Icons.person_pin_rounded,
+                text: hasAdviser
+                    ? 'Adviser: ${group.adviserName}'
+                    : 'Awaiting adviser',
+              ),
+              const SizedBox(height: 6),
+              _InfoRow(icon: Icons.groups_rounded, text: group.rosterLabel),
+              if (showCode) ...[
+                const SizedBox(height: 12),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: group.code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Group code copied')),
+                    );
+                  },
+                  child: Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.indigoTint,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Teammate code: ${group.code}',
+                            style: text.titleMedium?.copyWith(
+                                color: AppColors.indigo, letterSpacing: 1.2)),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.copy_rounded,
+                            size: 16, color: AppColors.indigo),
+                      ],
+                    ),
                   ),
                 ),
+              ],
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.lightbulb_outline_rounded,
+                      size: 18, color: AppColors.indigo),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Title ideas',
+                        style: text.bodyMedium?.copyWith(
+                            color: AppColors.indigo,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: AppColors.muted),
+                ],
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -357,14 +392,16 @@ class _GroupCard extends StatelessWidget {
 }
 
 class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.group, required this.onAccept});
+  const _RequestCard({required this.group, required this.onView});
   final Group group;
-  final VoidCallback onAccept;
+  final VoidCallback onView;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final count = group.roster.length;
+    final hasSection = group.section != null && group.section!.isNotEmpty;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -372,7 +409,11 @@ class _RequestCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(group.name, style: text.titleMedium),
-            const SizedBox(height: 4),
+            if (hasSection) ...[
+              const SizedBox(height: 2),
+              Text(group.section!, style: text.bodySmall),
+            ],
+            const SizedBox(height: 6),
             Text(group.thesisTitle, style: text.bodyMedium),
             const SizedBox(height: 12),
             _InfoRow(
@@ -385,8 +426,8 @@ class _RequestCard extends StatelessWidget {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(44)),
-                onPressed: onAccept,
-                child: const Text('Accept group'),
+                onPressed: onView,
+                child: const Text('View details'),
               ),
             ),
           ],

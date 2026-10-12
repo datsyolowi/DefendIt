@@ -2,12 +2,13 @@ class Group {
   const Group({
     required this.id,
     required this.name,
-    required this.thesisTitle,
+    required this.thesisTitle, // shown to users as the "thesis topic"
     required this.code,
     required this.memberUids,
     required this.memberNames,
     required this.roster,
     required this.createdAt,
+    this.section,
     this.leaderUid,
     this.adviserUid,
     this.adviserName,
@@ -21,6 +22,7 @@ class Group {
   final Map<String, String> memberNames; // uid -> display name
   final List<String> roster; // official member names; roster.first = leader
   final int createdAt; // millis since epoch
+  final String? section;
   final String? leaderUid;
   final String? adviserUid;
   final String? adviserName;
@@ -28,10 +30,7 @@ class Group {
   /// "Ana Cruz (leader), Ben Lim, Carla Reyes"
   String get rosterLabel {
     if (roster.isEmpty) return '';
-    return [
-      '${roster.first} (leader)',
-      ...roster.skip(1),
-    ].join(', ');
+    return ['${roster.first} (leader)', ...roster.skip(1)].join(', ');
   }
 
   Map<String, dynamic> toMap() => {
@@ -42,6 +41,7 @@ class Group {
     'memberNames': memberNames,
     'roster': roster,
     'createdAt': createdAt,
+    'section': section,
     'leaderUid': leaderUid,
     'adviserUid': adviserUid,
     'adviserName': adviserName,
@@ -65,6 +65,7 @@ class Group {
       memberNames: names,
       roster: roster,
       createdAt: (m['createdAt'] as int?) ?? 0,
+      section: m['section'] as String?,
       leaderUid:
       (m['leaderUid'] as String?) ?? (uids.isNotEmpty ? uids.first : null),
       adviserUid: m['adviserUid'] as String?,

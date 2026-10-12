@@ -48,6 +48,7 @@ class GroupRepository {
     required String name,
     required String thesisTitle,
     required List<String> members, // leader first
+    required String section,          // add next to the other required params
   }) async {
     final cleaned = members.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
 
@@ -69,6 +70,7 @@ class GroupRepository {
     final group = Group(
       id: ref.id,
       name: name.trim(),
+      section: section.trim(),        // add inside the Group( ... ) constructor call
       thesisTitle: thesisTitle.trim(),
       code: await _uniqueCode(),
       memberUids: [student.uid],

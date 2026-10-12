@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/repositories/title_repository.dart';
 import 'app.dart';
 import 'data/local/app_database.dart';
 import 'data/repositories/auth_repository.dart';
@@ -43,8 +44,10 @@ Future<void> main() async {
           create: (c) => ConsultationRepository(
               c.read<AppDatabase>(), c.read<SyncService>()),
         ),
+        Provider<TitleRepository>(create: (_) => TitleRepository()),
       ],
       child: const ThesisTrackApp(),
     ),
+
   );
 }

@@ -64,6 +64,7 @@ class _CreateGroupSheet extends StatefulWidget {
 class _CreateGroupSheetState extends State<_CreateGroupSheet> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
+  final _section = TextEditingController();
   final _title = TextEditingController();
   late final List<TextEditingController> _members;
   bool _busy = false;
@@ -82,6 +83,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
   @override
   void dispose() {
     _name.dispose();
+    _section.dispose();
     _title.dispose();
     for (final c in _members) {
       c.dispose();
@@ -109,6 +111,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
       await context.read<GroupRepository>().createGroup(
         student: widget.user,
         name: _name.text,
+        section: _section.text,
         thesisTitle: _title.text,
         members: _members.map((c) => c.text).toList(),
       );
@@ -141,13 +144,21 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
             ),
             const SizedBox(height: 14),
             TextFormField(
+              controller: _section,
+              decoration: const InputDecoration(
+                  labelText: 'Section', hintText: 'e.g. BSCpE 4-1'),
+              textCapitalization: TextCapitalization.characters,
+              validator: (v) =>
+                  Validators.text(v, label: 'Section', min: 2, max: 30),
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
               controller: _title,
-              decoration:
-              const InputDecoration(labelText: 'Working thesis title'),
+              decoration: const InputDecoration(labelText: 'Thesis topic'),
               textCapitalization: TextCapitalization.sentences,
               maxLines: 2,
               validator: (v) =>
-                  Validators.text(v, label: 'Thesis title', min: 5, max: 160),
+                  Validators.text(v, label: 'Thesis topic', min: 5, max: 160),
             ),
             const SizedBox(height: 22),
             Text('Members (${_members.length}/${Limits.maxGroupMembers})',
