@@ -39,7 +39,7 @@ class AppDatabase {
     final dir = await getDatabasesPath();
     return openDatabase(
       p.join(dir, 'thesistrack_$uid.db'),
-      version: 2,
+      version: 3,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE consultations (
@@ -83,9 +83,11 @@ class AppDatabase {
             createdAt INTEGER NOT NULL
           )''');
         await _createTitleTable(db);
+        await _createMilestoneTable(db);
       },
       onUpgrade: (db, oldVersion, _) async {
         if (oldVersion < 2) await _createTitleTable(db);
+        if (oldVersion < 3) await _createMilestoneTable(db);
       },
     );
   }
@@ -110,6 +112,24 @@ class AppDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_titles_group ON title_ideas(groupId)',
     );
+  }
+
+  Future<void> _createMilestoneTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS milestones (
+        id TEXT PRIMARY KEY,
+        groupId TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        title TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        dueAt INTEGER,
+        comment TEXT,
+        updatedByName TEXT,
+        updatedAt INTEGER NOT NULL
+      )''');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_milestones_group ON milestones(groupId)');
   }
 
   // ── change notifications (screens re-query when this fires) ──

@@ -7,6 +7,7 @@ import '../../core/constants/firestore_paths.dart';
 import '../../core/constants/limits.dart';
 import '../models/app_user.dart';
 import '../models/group.dart';
+import '../models/milestone.dart';
 
 class GroupFailure implements Exception {
   GroupFailure(this.message);
@@ -99,6 +100,9 @@ class GroupRepository {
         throw GroupFailure('You have already created a group.');
       }
       tx.set(ref, group.toMap());
+      for (final m in Milestone.defaults(group.id)) {
+        tx.set(ref.collection(FirestorePaths.milestones).doc(m.id), m.toMap());
+      }
     });
     return group;
   }

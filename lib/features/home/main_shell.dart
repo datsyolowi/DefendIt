@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/sync/sync_service.dart';
 import '../../data/models/app_user.dart';
+import '../../data/sync/sync_service.dart';
 import '../auth/auth_provider.dart';
 import '../groups/groups_screen.dart';
+import '../milestones/progress_screen.dart';
 import '../slots/adviser_availability_screen.dart';
 import '../slots/booking_screen.dart';
 import 'today_timeline_screen.dart';
@@ -32,6 +33,7 @@ class _MainShellState extends State<MainShell> {
       TodayTimelineScreen(onOpenSchedule: () => setState(() => _index = 1)),
       isAdviser ? const AdviserAvailabilityScreen() : const BookingScreen(),
       const GroupsScreen(),
+      const ProgressScreen(),
     ];
   }
 
@@ -63,6 +65,11 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.groups_outlined),
             selectedIcon: Icon(Icons.groups_rounded),
             label: 'Groups',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.flag_outlined),
+            selectedIcon: Icon(Icons.flag_rounded),
+            label: 'Progress',
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/repositories/milestone_repository.dart';
 import 'data/repositories/title_repository.dart';
 import 'app.dart';
 import 'data/local/app_database.dart';
@@ -18,10 +19,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // sqflite is the app's offline store, so Firestore's own cache is switched
-  // off to keep the two layers clearly separate.
-  FirebaseFirestore.instance.settings =
-  const Settings(persistenceEnabled: false);
+
 
   runApp(
     MultiProvider(
@@ -50,10 +48,15 @@ Future<void> main() async {
             c.read<SyncService>(),
           ),
         ),
+        Provider<MilestoneRepository>(
+          create: (c) =>
+              MilestoneRepository(c.read<AppDatabase>(), c.read<SyncService>()),
+        ),
 
       ],
       child: const ThesisTrackApp(),
     ),
+
 
   );
 }

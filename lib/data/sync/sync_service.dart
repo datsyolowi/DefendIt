@@ -12,6 +12,7 @@ import '../models/action_item.dart';
 import '../models/app_user.dart';
 import '../models/consultation.dart';
 import '../models/group.dart';
+import '../models/milestone.dart';
 import '../models/title_idea.dart';
 import '../repositories/group_repository.dart';
 
@@ -173,15 +174,20 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  /// Both roles: title ideas live in groups/{id}/titles, one listener per group.
+  /// Both roles: per-group subcollections (title ideas and milestones),
+  /// one listener each per group.
   void _listenTitles(List<String> groupIds) {
     for (final id in groupIds) {
-      final path =
-          '${FirestorePaths.groups}/$id/${FirestorePaths.titles}';
-      _groupSubs.add(_fs.collection(path).snapshots().listen(
-            (snap) => _apply(path, 'title_ideas', snap),
-        onError: (_) {},
-      ));
+      for (final (sub, table) in [
+        (FirestorePaths.titles, 'title_ideas'),
+        (FirestorePaths.milestones, 'milestones'),
+      ]) {
+        final path = '${FirestorePaths.groups}/$id/$sub';
+        _groupSubs.add(_fs.collection(path).snapshots().listen(
+              (snap) => _apply(path, table, snap),
+          onError: (_) {},
+        ));
+      }
     }
   }
 
@@ -196,6 +202,8 @@ class SyncService extends ChangeNotifier {
         return Consultation.fromMap(d, id).toRow();
       case 'action_items':
         return ActionItem.fromMap(d, id).toRow();
+      case 'milestones':
+        return Milestone.fromMap(d, id).toRow();
       default:
         return TitleIdea.fromMap(d, id).toRow();
     }
