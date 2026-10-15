@@ -92,4 +92,15 @@ class TitleIdea {
     reviewedByName: m['reviewedByName'] as String?,
     reviewedAt: (m['reviewedAt'] as num?)?.toInt(),
   );
+
+  /// sqflite row shape (same fields as Firestore, plus the id).
+  Map<String, Object?> toRow() => {
+    ...toMap(),
+    'id': id,
+  };
+
+  factory TitleIdea.fromRow(Map<String, Object?> r) => TitleIdea.fromMap(
+    Map<String, dynamic>.from(r),
+    r['id'] as String,
+  );
 }

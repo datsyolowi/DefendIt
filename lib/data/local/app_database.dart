@@ -39,7 +39,7 @@ class AppDatabase {
     final dir = await getDatabasesPath();
     return openDatabase(
       p.join(dir, 'thesistrack_$uid.db'),
-      version: 1,
+      version: 2,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE consultations (
@@ -71,7 +71,8 @@ class AppDatabase {
             updatedAt INTEGER NOT NULL
           )''');
         await db.execute(
-            'CREATE INDEX idx_items_consultation ON action_items(consultationId)');
+          'CREATE INDEX idx_items_consultation ON action_items(consultationId)',
+        );
         await db.execute('''
           CREATE TABLE outbox (
             seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +82,33 @@ class AppDatabase {
             data TEXT,
             createdAt INTEGER NOT NULL
           )''');
+        await _createTitleTable(db);
       },
+      onUpgrade: (db, oldVersion, _) async {
+        if (oldVersion < 2) await _createTitleTable(db);
+      },
+    );
+  }
+
+  Future<void> _createTitleTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS title_ideas (
+        id TEXT PRIMARY KEY,
+        groupId TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        purpose TEXT NOT NULL,
+        status TEXT NOT NULL,
+        createdByUid TEXT NOT NULL,
+        createdByName TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL,
+        comment TEXT,
+        reviewedByName TEXT,
+        reviewedAt INTEGER
+      )''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_titles_group ON title_ideas(groupId)',
     );
   }
 
@@ -144,16 +171,20 @@ class AppDatabase {
 
   Future<bool> hasPending(String collection, String docId) async {
     final db = await instance;
-    final n = Sqflite.firstIntValue(await db.rawQuery(
+    final n = Sqflite.firstIntValue(
+      await db.rawQuery(
         'SELECT COUNT(*) FROM outbox WHERE collection = ? AND docId = ?',
-        [collection, docId]));
+        [collection, docId],
+      ),
+    );
     return (n ?? 0) > 0;
   }
 
   Future<int> pendingCount() async {
     final db = await instance;
     return Sqflite.firstIntValue(
-        await db.rawQuery('SELECT COUNT(*) FROM outbox')) ??
+      await db.rawQuery('SELECT COUNT(*) FROM outbox'),
+    ) ??
         0;
   }
 }

@@ -12,6 +12,7 @@ import '../models/action_item.dart';
 import '../models/app_user.dart';
 import '../models/consultation.dart';
 import '../models/group.dart';
+import '../models/title_idea.dart';
 import '../repositories/group_repository.dart';
 
 /// Keeps the local sqflite database and Firestore in step:
@@ -28,7 +29,8 @@ class SyncService extends ChangeNotifier {
   StreamSubscription<List<ConnectivityResult>>? _net;
   StreamSubscription<List<Group>>? _groupSub;
   StreamSubscription<int>? _pendingSub;
-  final List<StreamSubscription<dynamic>> _remoteSubs = [];
+  final List<StreamSubscription<dynamic>> _adviserSubs = [];
+  final List<StreamSubscription<dynamic>> _groupSubs = [];
   String _groupKey = '\u0000';
 
   bool _online = true;
@@ -56,12 +58,8 @@ class SyncService extends ChangeNotifier {
     _net = Connectivity().onConnectivityChanged.listen(_onNet);
     Connectivity().checkConnectivity().then(_onNet);
 
-    if (user.role == UserRole.adviser) {
-      _listenRemote(adviserUid: user.uid);
-    } else {
-      _groupSub =
-          _groups.watchMyGroups(user).listen(_onGroups, onError: (_) {});
-    }
+    if (user.role == UserRole.adviser) _listenAdviserDocs(user.uid);
+    _groupSub = _groups.watchMyGroups(user).listen(_onGroups, onError: (_) {});
   }
 
   /// Called when the signed-in user leaves the app shell (sign out).
@@ -69,7 +67,8 @@ class SyncService extends ChangeNotifier {
     _net?.cancel();
     _groupSub?.cancel();
     _pendingSub?.cancel();
-    _cancelRemote();
+    _cancelAll(_adviserSubs);
+    _cancelAll(_groupSubs);
     _net = null;
     _groupSub = null;
     _pendingSub = null;
@@ -77,6 +76,13 @@ class SyncService extends ChangeNotifier {
     _user = null;
     _pending = 0;
     _db.close();
+  }
+
+  void _cancelAll(List<StreamSubscription<dynamic>> subs) {
+    for (final s in subs) {
+      s.cancel();
+    }
+    subs.clear();
   }
 
   void _onNet(List<ConnectivityResult> results) {
@@ -114,6 +120,7 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<void> _push(Map<String, Object?> op) async {
+    // 'collection' may be a nested path such as groups/{id}/titles.
     final ref =
     _fs.collection(op['collection'] as String).doc(op['docId'] as String);
     if (op['op'] == 'delete') {
@@ -126,47 +133,80 @@ class SyncService extends ChangeNotifier {
 
   // ── pull (cloud → local) ──
 
-  void _onGroups(List<Group> groups) {
-    final ids = groups.map((g) => g.id).toList()..sort();
-    final key = ids.join(',');
-    if (key == _groupKey) return;
-    _groupKey = key;
-    _cancelRemote();
-    if (ids.isNotEmpty) _listenRemote(groupIds: ids);
-  }
-
-  void _listenRemote({String? adviserUid, List<String>? groupIds}) {
-    _cancelRemote();
+  /// Adviser: consultations and action items are found by adviserUid.
+  void _listenAdviserDocs(String uid) {
     for (final col in [
       FirestorePaths.consultations,
       FirestorePaths.actionItems,
     ]) {
-      Query<Map<String, dynamic>> q = _fs.collection(col);
-      q = adviserUid != null
-          ? q.where('adviserUid', isEqualTo: adviserUid)
-          : q.where('groupId', whereIn: groupIds);
-      _remoteSubs.add(q.snapshots().listen(
-            (snap) => _applyRemote(col, snap),
+      final q = _fs.collection(col).where('adviserUid', isEqualTo: uid);
+      _adviserSubs.add(q.snapshots().listen(
+            (snap) => _apply(col, _tableFor(col), snap),
         onError: (_) {},
       ));
     }
   }
 
-  void _cancelRemote() {
-    for (final s in _remoteSubs) {
-      s.cancel();
-    }
-    _remoteSubs.clear();
+  void _onGroups(List<Group> groups) {
+    final ids = groups.map((g) => g.id).toList()..sort();
+    final key = ids.join(',');
+    if (key == _groupKey) return;
+    _groupKey = key;
+    _cancelAll(_groupSubs);
+    if (ids.isEmpty) return;
+
+    _listenTitles(ids);
+    if (_user?.role == UserRole.student) _listenStudentDocs(ids);
   }
 
-  Future<void> _applyRemote(
-      String collection,
+  /// Student: consultations and action items are found by group id.
+  void _listenStudentDocs(List<String> ids) {
+    for (final col in [
+      FirestorePaths.consultations,
+      FirestorePaths.actionItems,
+    ]) {
+      final q = _fs.collection(col).where('groupId', whereIn: ids);
+      _groupSubs.add(q.snapshots().listen(
+            (snap) => _apply(col, _tableFor(col), snap),
+        onError: (_) {},
+      ));
+    }
+  }
+
+  /// Both roles: title ideas live in groups/{id}/titles, one listener per group.
+  void _listenTitles(List<String> groupIds) {
+    for (final id in groupIds) {
+      final path =
+          '${FirestorePaths.groups}/$id/${FirestorePaths.titles}';
+      _groupSubs.add(_fs.collection(path).snapshots().listen(
+            (snap) => _apply(path, 'title_ideas', snap),
+        onError: (_) {},
+      ));
+    }
+  }
+
+  String _tableFor(String collection) =>
+      collection == FirestorePaths.consultations
+          ? 'consultations'
+          : 'action_items';
+
+  Map<String, Object?> _row(String table, Map<String, dynamic> d, String id) {
+    switch (table) {
+      case 'consultations':
+        return Consultation.fromMap(d, id).toRow();
+      case 'action_items':
+        return ActionItem.fromMap(d, id).toRow();
+      default:
+        return TitleIdea.fromMap(d, id).toRow();
+    }
+  }
+
+  Future<void> _apply(
+      String collectionPath,
+      String table,
       QuerySnapshot<Map<String, dynamic>> snap,
       ) async {
     if (_user == null) return;
-    final isConsultations = collection == FirestorePaths.consultations;
-    final table = isConsultations ? 'consultations' : 'action_items';
-
     try {
       final db = await _db.instance;
       var changed = false;
@@ -174,7 +214,7 @@ class SyncService extends ChangeNotifier {
       for (final change in snap.docChanges) {
         final doc = change.doc;
         // Our own unsynced edits win; they will be pushed shortly.
-        if (await _db.hasPending(collection, doc.id)) continue;
+        if (await _db.hasPending(collectionPath, doc.id)) continue;
 
         if (change.type == DocumentChangeType.removed) {
           await db.delete(table, where: 'id = ?', whereArgs: [doc.id]);
@@ -194,10 +234,7 @@ class SyncService extends ChangeNotifier {
           continue;
         }
 
-        final row = isConsultations
-            ? Consultation.fromMap(data, doc.id).toRow()
-            : ActionItem.fromMap(data, doc.id).toRow();
-        await db.insert(table, row,
+        await db.insert(table, _row(table, data, doc.id),
             conflictAlgorithm: ConflictAlgorithm.replace);
         changed = true;
       }

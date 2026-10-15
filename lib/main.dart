@@ -44,7 +44,13 @@ Future<void> main() async {
           create: (c) => ConsultationRepository(
               c.read<AppDatabase>(), c.read<SyncService>()),
         ),
-        Provider<TitleRepository>(create: (_) => TitleRepository()),
+        Provider<TitleRepository>(
+          create: (c) => TitleRepository(
+            c.read<AppDatabase>(),
+            c.read<SyncService>(),
+          ),
+        ),
+
       ],
       child: const ThesisTrackApp(),
     ),

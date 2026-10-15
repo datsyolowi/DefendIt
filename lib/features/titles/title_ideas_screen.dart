@@ -6,6 +6,7 @@ import '../../core/widgets/confirm_dialog.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_view.dart';
+import '../../core/widgets/sync_chip.dart';
 import '../../data/models/app_user.dart';
 import '../../data/models/group.dart';
 import '../../data/models/title_idea.dart';
@@ -75,7 +76,13 @@ class _TitleIdeasScreenState extends State<TitleIdeasScreen> {
     final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Title ideas')),
+      appBar: AppBar(
+        title: const Text('Title ideas'),
+        actions: const [
+          SyncChip(),
+          SizedBox(width: 12),
+        ],
+      ),
       floatingActionButton: _isStudent
           ? FloatingActionButton.extended(
         backgroundColor: AppColors.amber,

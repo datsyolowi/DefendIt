@@ -39,7 +39,9 @@ class _GroupPreviewState extends State<_GroupPreview> {
   @override
   void initState() {
     super.initState();
-    _titles = context.read<TitleRepository>().watchTitles(widget.group.id);
+    _titles = context
+        .read<TitleRepository>()
+        .watchRemoteTitles(widget.group.id);
   }
 
   Future<void> _accept() async {
