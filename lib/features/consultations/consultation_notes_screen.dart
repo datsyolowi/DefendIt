@@ -8,11 +8,11 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_view.dart';
 import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/sync_chip.dart';
 import '../../data/models/action_item.dart';
 import '../../data/models/app_user.dart';
 import '../../data/models/consultation.dart';
 import '../../data/repositories/consultation_repository.dart';
-import '../../data/sync/sync_service.dart';
 import '../auth/auth_provider.dart';
 import 'action_items_screen.dart';
 
@@ -73,7 +73,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Consultation'),
-        actions: const [_SyncChip(), SizedBox(width: 12)],
+        actions: const [SyncChip(), SizedBox(width: 12)],
       ),
       body: StreamBuilder<Consultation?>(
         stream: _consultation,
@@ -335,50 +335,6 @@ class _ItemTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SyncChip extends StatelessWidget {
-  const _SyncChip();
-
-  @override
-  Widget build(BuildContext context) {
-    final sync = context.watch<SyncService>();
-    final String label;
-    final Color color;
-    final IconData icon;
-
-    if (!sync.online) {
-      label = sync.pending > 0 ? 'Offline · ${sync.pending} pending' : 'Offline';
-      color = AppColors.amber;
-      icon = Icons.cloud_off_rounded;
-    } else if (sync.pending > 0 || sync.syncing) {
-      label = 'Syncing…';
-      color = AppColors.indigo;
-      icon = Icons.sync_rounded;
-    } else {
-      label = 'Synced';
-      color = AppColors.success;
-      icon = Icons.cloud_done_rounded;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-        ],
       ),
     );
   }

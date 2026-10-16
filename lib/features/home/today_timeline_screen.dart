@@ -8,13 +8,19 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loading_view.dart';
+import '../../core/widgets/sync_chip.dart';
 import '../../data/models/app_user.dart';
+import '../../data/models/group.dart';
 import '../../data/models/slot.dart';
+import '../../data/repositories/attention_repository.dart';
 import '../../data/repositories/consultation_repository.dart';
 import '../../data/repositories/group_repository.dart';
 import '../../data/repositories/slot_repository.dart';
 import '../auth/auth_provider.dart';
 import '../consultations/consultation_notes_screen.dart';
+import '../milestones/milestone_board_screen.dart';
+import '../milestones/milestone_detail_screen.dart';
+import '../titles/title_ideas_screen.dart';
 import 'today_controller.dart';
 
 class TodayTimelineScreen extends StatefulWidget {
@@ -30,6 +36,7 @@ class TodayTimelineScreen extends StatefulWidget {
 class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
   late final AppUser _user;
   late final TodayController _c;
+  late final Stream<List<AttentionEntry>> _attention;
 
   @override
   void initState() {
@@ -40,6 +47,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
       groupRepo: context.read<GroupRepository>(),
       slotRepo: context.read<SlotRepository>(),
     );
+    _attention = context.read<AttentionRepository>().watch(_user);
   }
 
   @override
@@ -150,6 +158,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
           ),
         ],
       ),
+      _AttentionCard(stream: _attention, groups: _c.groups),
       if (_c.hasGroupAwaitingAdviser) ...[
         const SizedBox(height: 16),
         const _Notice(
@@ -251,7 +260,14 @@ class _Header extends StatelessWidget {
                   ],
                 ),
               ),
-              _ProfileMenu(user: user),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SyncChip(onDark: true),
+                  const SizedBox(width: 10),
+                  _ProfileMenu(user: user),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -646,6 +662,177 @@ class _UpcomingRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AttentionCard extends StatelessWidget {
+  const _AttentionCard({required this.stream, required this.groups});
+  final Stream<List<AttentionEntry>> stream;
+  final List<Group> groups;
+
+  Group? _group(String id) {
+    for (final g in groups) {
+      if (g.id == id) return g;
+    }
+    return null;
+  }
+
+  void _open(BuildContext context, AttentionEntry e) {
+    final t = e.target;
+    final nav = Navigator.of(context);
+    if (e.kind == AttentionKind.actionOverdue && t.consultationId != null) {
+      nav.push(MaterialPageRoute(
+        builder: (_) => ConsultationScreen(consultationId: t.consultationId!),
+      ));
+      return;
+    }
+    final group = _group(t.groupId);
+    if (group == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Open the Groups tab and try again.')));
+      return;
+    }
+    switch (e.kind) {
+      case AttentionKind.titlePolish:
+      case AttentionKind.titleReview:
+        nav.push(MaterialPageRoute(
+            builder: (_) => TitleIdeasScreen(group: group)));
+      default:
+        nav.push(MaterialPageRoute(
+          builder: (_) => t.milestoneId == null
+              ? MilestoneBoardScreen(group: group)
+              : MilestoneDetailScreen(
+              group: group, milestoneId: t.milestoneId!),
+        ));
+    }
+  }
+
+  String _label(AttentionEntry e) {
+    final n = e.count;
+    final s = n == 1 ? '' : 's';
+    final needs = n == 1 ? 'needs' : 'need';
+    switch (e.kind) {
+      case AttentionKind.milestoneRevision:
+        return '$n milestone$s $needs revision';
+      case AttentionKind.titlePolish:
+        return '$n title idea$s $needs polish';
+      case AttentionKind.milestoneReview:
+        return '$n milestone$s awaiting your review';
+      case AttentionKind.titleReview:
+        return '$n title idea$s awaiting your review';
+      case AttentionKind.milestoneOverdue:
+        return '$n milestone$s overdue';
+      case AttentionKind.taskOverdue:
+        return '$n task$s overdue';
+      case AttentionKind.actionOverdue:
+        return '$n action item$s overdue';
+      case AttentionKind.readyToSubmit:
+        return '$n milestone$s ready to submit';
+    }
+  }
+
+  IconData _icon(AttentionKind k) {
+    switch (k) {
+      case AttentionKind.milestoneRevision:
+        return Icons.replay_rounded;
+      case AttentionKind.titlePolish:
+        return Icons.edit_note_rounded;
+      case AttentionKind.milestoneReview:
+        return Icons.rate_review_rounded;
+      case AttentionKind.titleReview:
+        return Icons.lightbulb_outline_rounded;
+      case AttentionKind.milestoneOverdue:
+        return Icons.flag_rounded;
+      case AttentionKind.taskOverdue:
+        return Icons.alarm_rounded;
+      case AttentionKind.actionOverdue:
+        return Icons.assignment_late_rounded;
+      case AttentionKind.readyToSubmit:
+        return Icons.task_alt_rounded;
+    }
+  }
+
+  Color _color(AttentionKind k) {
+    switch (k) {
+      case AttentionKind.milestoneRevision:
+      case AttentionKind.milestoneOverdue:
+      case AttentionKind.taskOverdue:
+      case AttentionKind.actionOverdue:
+        return AppColors.error;
+      case AttentionKind.titlePolish:
+      case AttentionKind.milestoneReview:
+      case AttentionKind.titleReview:
+        return const Color(0xFFB7791F);
+      case AttentionKind.readyToSubmit:
+        return AppColors.success;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<AttentionEntry>>(
+      stream: stream,
+      builder: (context, snap) {
+        final entries = snap.data ?? const <AttentionEntry>[];
+        if (entries.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Needs attention',
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 12),
+              Material(
+                color: AppColors.surface,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < entries.length; i++) ...[
+                      if (i > 0)
+                        const Divider(height: 1, color: AppColors.border),
+                      InkWell(
+                        onTap: () => _open(context, entries[i]),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 14),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: _color(entries[i].kind)
+                                      .withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(_icon(entries[i].kind),
+                                    size: 18, color: _color(entries[i].kind)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(_label(entries[i]),
+                                    style: AppTextStyles.title
+                                        .copyWith(fontSize: 14)),
+                              ),
+                              const Icon(Icons.chevron_right_rounded,
+                                  color: AppColors.muted),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

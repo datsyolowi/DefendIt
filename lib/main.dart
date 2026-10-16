@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/repositories/attention_repository.dart';
 import 'data/repositories/milestone_repository.dart';
 import 'data/repositories/title_repository.dart';
 import 'app.dart';
@@ -51,6 +52,9 @@ Future<void> main() async {
         Provider<MilestoneRepository>(
           create: (c) =>
               MilestoneRepository(c.read<AppDatabase>(), c.read<SyncService>()),
+        ),
+        Provider<AttentionRepository>(
+          create: (c) => AttentionRepository(c.read<AppDatabase>()),
         ),
 
       ],

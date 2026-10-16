@@ -63,6 +63,13 @@ class SyncService extends ChangeNotifier {
     if (user.role == UserRole.adviser) _listenAdviserDocs(user.uid);
     _groupSub = _groups.watchMyGroups(user).listen(_onGroups, onError: (_) {});
   }
+  /// Re-checks connectivity and pushes pending changes (used by the sync chip).
+  Future<void> syncNow() async {
+    final results = await Connectivity().checkConnectivity();
+    _onNet(results);
+    if (_online) await flush();
+  }
+
 
   /// Called when the signed-in user leaves the app shell (sign out).
   void stop() {
