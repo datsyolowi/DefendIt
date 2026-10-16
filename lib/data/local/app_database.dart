@@ -39,7 +39,7 @@ class AppDatabase {
     final dir = await getDatabasesPath();
     return openDatabase(
       p.join(dir, 'thesistrack_$uid.db'),
-      version: 3,
+      version: 4,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE consultations (
@@ -84,10 +84,12 @@ class AppDatabase {
           )''');
         await _createTitleTable(db);
         await _createMilestoneTable(db);
+        await _createTaskTable(db);
       },
       onUpgrade: (db, oldVersion, _) async {
         if (oldVersion < 2) await _createTitleTable(db);
         if (oldVersion < 3) await _createMilestoneTable(db);
+        if (oldVersion < 4) await _createTaskTable(db);
       },
     );
   }
@@ -129,7 +131,29 @@ class AppDatabase {
         updatedAt INTEGER NOT NULL
       )''');
     await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_milestones_group ON milestones(groupId)');
+      'CREATE INDEX IF NOT EXISTS idx_milestones_group ON milestones(groupId)',
+    );
+  }
+
+  Future<void> _createTaskTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS milestone_tasks (
+        id TEXT PRIMARY KEY,
+        groupId TEXT NOT NULL,
+        milestoneId TEXT NOT NULL,
+        title TEXT NOT NULL,
+        assignee TEXT,
+        dueAt INTEGER,
+        done INTEGER NOT NULL DEFAULT 0,
+        doneAt INTEGER,
+        doneByName TEXT,
+        createdByName TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
+      )''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_milestone ON milestone_tasks(milestoneId)',
+    );
   }
 
   // ── change notifications (screens re-query when this fires) ──

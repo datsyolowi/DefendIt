@@ -1,3 +1,5 @@
+
+
 class FirestorePaths {
   FirestorePaths._();
 
@@ -8,4 +10,5 @@ class FirestorePaths {
   static const actionItems = 'actionItems';
   static const milestones = 'milestones';
   static const titles = 'titles'; // subcollection of groups
+  static const tasks = 'tasks'; // subcollection of groups
 }

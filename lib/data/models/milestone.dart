@@ -45,6 +45,12 @@ enum MilestoneStatus {
   List<MilestoneStatus> get adviserNext => this == MilestoneStatus.forReview
       ? const [MilestoneStatus.approved, MilestoneStatus.needsRevision]
       : const [];
+
+  /// Students may add, edit, and tick tasks only in these statuses.
+  bool get allowsTaskEdits =>
+      this == MilestoneStatus.notStarted ||
+          this == MilestoneStatus.inProgress ||
+          this == MilestoneStatus.needsRevision;
 }
 
 class Milestone {

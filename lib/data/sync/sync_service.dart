@@ -13,6 +13,7 @@ import '../models/app_user.dart';
 import '../models/consultation.dart';
 import '../models/group.dart';
 import '../models/milestone.dart';
+import '../models/milestone_task.dart';
 import '../models/title_idea.dart';
 import '../repositories/group_repository.dart';
 
@@ -160,27 +161,31 @@ class SyncService extends ChangeNotifier {
     if (_user?.role == UserRole.student) _listenStudentDocs(ids);
   }
 
-  /// Student: consultations and action items are found by group id.
+  /// Student: consultations and action items are found by group id
+  /// (one equality query per group, which the security rules can verify).
   void _listenStudentDocs(List<String> ids) {
-    for (final col in [
-      FirestorePaths.consultations,
-      FirestorePaths.actionItems,
-    ]) {
-      final q = _fs.collection(col).where('groupId', whereIn: ids);
-      _groupSubs.add(q.snapshots().listen(
-            (snap) => _apply(col, _tableFor(col), snap),
-        onError: (_) {},
-      ));
+    for (final id in ids) {
+      for (final col in [
+        FirestorePaths.consultations,
+        FirestorePaths.actionItems,
+      ]) {
+        final q = _fs.collection(col).where('groupId', isEqualTo: id);
+        _groupSubs.add(q.snapshots().listen(
+              (snap) => _apply(col, _tableFor(col), snap),
+          onError: (_) {},
+        ));
+      }
     }
   }
 
-  /// Both roles: per-group subcollections (title ideas and milestones),
+  /// Both roles: per-group subcollections (title ideas, milestones, tasks),
   /// one listener each per group.
   void _listenTitles(List<String> groupIds) {
     for (final id in groupIds) {
       for (final (sub, table) in [
         (FirestorePaths.titles, 'title_ideas'),
         (FirestorePaths.milestones, 'milestones'),
+        (FirestorePaths.tasks, 'milestone_tasks'),
       ]) {
         final path = '${FirestorePaths.groups}/$id/$sub';
         _groupSubs.add(_fs.collection(path).snapshots().listen(
@@ -204,6 +209,8 @@ class SyncService extends ChangeNotifier {
         return ActionItem.fromMap(d, id).toRow();
       case 'milestones':
         return Milestone.fromMap(d, id).toRow();
+      case 'milestone_tasks':
+        return MilestoneTask.fromMap(d, id).toRow();
       default:
         return TitleIdea.fromMap(d, id).toRow();
     }
