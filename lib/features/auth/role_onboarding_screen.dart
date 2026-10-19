@@ -14,7 +14,25 @@ class RoleOnboardingScreen extends StatefulWidget {
 }
 
 class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _code = TextEditingController();
   UserRole? _selected;
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  void _continue() {
+    final role = _selected;
+    if (role == null) return;
+    if (role == UserRole.adviser && !_formKey.currentState!.validate()) return;
+    context.read<AuthProvider>().chooseRole(
+          role,
+          adviserCode: role == UserRole.adviser ? _code.text : null,
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,46 +41,70 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Text('How will you use ThesisTrack?', style: text.headlineLarge),
-              const SizedBox(height: 8),
-              Text('This can\'t be changed later, so choose carefully.',
-                  style: text.bodySmall),
-              const SizedBox(height: 28),
-              _RoleCard(
-                icon: Icons.person_pin_rounded,
-                title: 'I\'m an adviser',
-                subtitle: 'Publish slots, log consultations, assign action items.',
-                selected: _selected == UserRole.adviser,
-                onTap: () => setState(() => _selected = UserRole.adviser),
-              ),
-              const SizedBox(height: 14),
-              _RoleCard(
-                icon: Icons.groups_rounded,
-                title: 'I\'m a student',
-                subtitle: 'Book consultations and track my group\'s milestones.',
-                selected: _selected == UserRole.student,
-                onTap: () => setState(() => _selected = UserRole.student),
-              ),
-              const Spacer(),
-              if (auth.errorMessage != null) ...[
-                Text(auth.errorMessage!,
-                    style: text.bodyMedium?.copyWith(color: AppColors.error)),
-                const SizedBox(height: 12),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                Text('How will you use ThesisTrack?',
+                    style: text.headlineLarge),
+                const SizedBox(height: 8),
+                Text('This can\'t be changed later, so choose carefully.',
+                    style: text.bodySmall),
+                const SizedBox(height: 28),
+                _RoleCard(
+                  icon: Icons.person_pin_rounded,
+                  title: 'I\'m an adviser',
+                  subtitle:
+                      'Publish slots, log consultations, assign action items.',
+                  selected: _selected == UserRole.adviser,
+                  onTap: () => setState(() => _selected = UserRole.adviser),
+                ),
+                if (_selected == UserRole.adviser) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _code,
+                    textCapitalization: TextCapitalization.characters,
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: 'Adviser access code',
+                      hintText: 'CPE-XXXX-XXXX',
+                      helperText:
+                          'Enter the one-time code you received from the administrator.',
+                      helperMaxLines: 2,
+                    ),
+                    validator: (v) => (v ?? '').trim().length < 8
+                        ? 'Enter your adviser access code'
+                        : null,
+                  ),
+                ],
+                const SizedBox(height: 14),
+                _RoleCard(
+                  icon: Icons.groups_rounded,
+                  title: 'I\'m a student',
+                  subtitle:
+                      'Book consultations and track my group\'s milestones.',
+                  selected: _selected == UserRole.student,
+                  onTap: () => setState(() => _selected = UserRole.student),
+                ),
+                const SizedBox(height: 32),
+                if (auth.errorMessage != null) ...[
+                  Text(auth.errorMessage!,
+                      style:
+                          text.bodyMedium?.copyWith(color: AppColors.error)),
+                  const SizedBox(height: 12),
+                ],
+                PrimaryButton(
+                  label: 'Continue',
+                  loading: auth.busy,
+                  onPressed: _selected == null ? null : _continue,
+                ),
               ],
-              PrimaryButton(
-                label: 'Continue',
-                loading: auth.busy,
-                onPressed: _selected == null
-                    ? null
-                    : () => context.read<AuthProvider>().chooseRole(_selected!),
-              ),
-            ],
+            ),
           ),
         ),
       ),

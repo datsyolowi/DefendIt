@@ -64,16 +64,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> chooseRole(UserRole role) async {
+    Future<void> chooseRole(UserRole role, {String? adviserCode}) async {
     final current = profile;
     if (current == null) return;
     busy = true;
     errorMessage = null;
     notifyListeners();
     try {
-      profile = await _repo.saveProfile(current.copyWith(role: role));
+      profile = role == UserRole.adviser
+          ? await _repo.registerAdviser(current, adviserCode ?? '')
+          : await _repo.saveProfile(current.copyWith(role: role));
       status = AuthStatus.ready;
-    } catch (_) {
+    } on AuthFailure catch (e) {
+      errorMessage = e.message;
+    } catch (e) {
+      debugPrint('ROLE SAVE ERROR: $e');
       errorMessage = 'Could not save your role. Please try again.';
     }
     busy = false;

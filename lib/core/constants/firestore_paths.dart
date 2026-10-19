@@ -11,4 +11,5 @@ class FirestorePaths {
   static const milestones = 'milestones';
   static const titles = 'titles'; // subcollection of groups
   static const tasks = 'tasks'; // subcollection of groups
+  static const adviserCodes = 'adviserCodes';
 }

@@ -65,6 +65,48 @@ class AuthRepository {
     return user;
   }
 
+    /// Creates the adviser profile and claims the access code in ONE transaction.
+  /// The security rules accept an adviser profile only together with this claim.
+  Future<AppUser> registerAdviser(AppUser user, String rawCode) async {
+    final code = rawCode.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+    if (code.isEmpty) throw AuthFailure('Enter your adviser access code.');
+    if (code.contains('/')) throw AuthFailure('That code is not valid.');
+
+    final codeRef = _db.collection(FirestorePaths.adviserCodes).doc(code);
+    final userRef = _db.collection(FirestorePaths.users).doc(user.uid);
+    final adviser = user.copyWith(role: UserRole.adviser);
+
+    try {
+      await _db.runTransaction((tx) async {
+        final snap = await tx.get(codeRef);
+        if (!snap.exists) throw AuthFailure('That code is not valid.');
+        final claimedBy = snap.data()?['claimedByUid'];
+        if (claimedBy != null && claimedBy != user.uid) {
+          throw AuthFailure('That code has already been used.');
+        }
+        tx.update(codeRef, {
+          'claimedByUid': user.uid,
+          'claimedAt': FieldValue.serverTimestamp(),
+        });
+        tx.set(
+          userRef,
+          {
+            ...adviser.toMap(),
+            'adviserCode': code,
+            'createdAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw AuthFailure('That code could not be verified. Check it and try again.');
+      }
+      throw AuthFailure('Could not verify the code. Check your connection and try again.');
+    }
+    return adviser;
+  }
+
   Future<void> signOut() async {
     await _ensureGoogle();
     await GoogleSignIn.instance.signOut();
