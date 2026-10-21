@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/limits.dart';
@@ -146,8 +147,10 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
             TextFormField(
               controller: _section,
               decoration: const InputDecoration(
-                  labelText: 'Section', hintText: 'e.g. BSCpE 4-1'),
+                  labelText: 'Section', hintText: 'BSCPE 4-X'),
               textCapitalization: TextCapitalization.characters,
+              autocorrect: false,
+              inputFormatters: [_SectionFormatter()],
               validator: (v) =>
                   Validators.text(v, label: 'Section', min: 2, max: 30),
             ),
@@ -217,6 +220,60 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
 }
 
 // ───────────────────────── Join group (students) ─────────────────────────
+
+class _SectionFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (!newValue.composing.isCollapsed) return newValue;
+
+    final text = newValue.text;
+    var changeStart = 0;
+    while (changeStart < oldValue.text.length &&
+        changeStart < text.length &&
+        oldValue.text[changeStart] == text[changeStart]) {
+      changeStart++;
+    }
+    var oldEnd = oldValue.text.length;
+    var newEnd = text.length;
+    while (oldEnd > changeStart &&
+        newEnd > changeStart &&
+        oldValue.text[oldEnd - 1] == text[newEnd - 1]) {
+      oldEnd--;
+      newEnd--;
+    }
+
+    // Only a newly inserted first digit triggers formatting. Deletions never
+    // restore a removed dash, and the section number does not add another one.
+    final digit = RegExp(r'[0-9]').firstMatch(text);
+    final insertAt = !text.contains('-') &&
+            digit != null &&
+            digit.start >= changeStart &&
+            digit.start < newEnd
+        ? digit.end
+        : -1;
+    final formatted = insertAt < 0
+        ? text.toUpperCase()
+        : '${text.substring(0, insertAt).toUpperCase()}-'
+            '${text.substring(insertAt).toUpperCase()}';
+
+    int mapOffset(int offset) {
+      if (offset < 0) return offset;
+      final mapped = text.substring(0, offset).toUpperCase().length;
+      return mapped + (insertAt >= 0 && offset >= insertAt ? 1 : 0);
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: newValue.selection.copyWith(
+        baseOffset: mapOffset(newValue.selection.baseOffset),
+        extentOffset: mapOffset(newValue.selection.extentOffset),
+      ),
+    );
+  }
+}
 
 class _JoinGroupSheet extends StatefulWidget {
   const _JoinGroupSheet({required this.user});

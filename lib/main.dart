@@ -20,16 +20,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-
-
   runApp(
     MultiProvider(
       providers: [
         Provider<AuthRepository>(create: (_) => AuthRepository()),
-        ChangeNotifierProvider<AuthProvider>(
-          create: (c) => AuthProvider(c.read<AuthRepository>()),
-        ),
         Provider<GroupRepository>(create: (_) => GroupRepository()),
+        ChangeNotifierProvider<AuthProvider>(
+          create: (c) =>
+              AuthProvider(c.read<AuthRepository>(), c.read<GroupRepository>()),
+        ),
         Provider<SlotRepository>(create: (_) => SlotRepository()),
         Provider<AppDatabase>(create: (_) => AppDatabase()),
         ChangeNotifierProvider<SyncService>(
@@ -41,13 +40,13 @@ Future<void> main() async {
         ),
         Provider<ConsultationRepository>(
           create: (c) => ConsultationRepository(
-              c.read<AppDatabase>(), c.read<SyncService>()),
-        ),
-        Provider<TitleRepository>(
-          create: (c) => TitleRepository(
             c.read<AppDatabase>(),
             c.read<SyncService>(),
           ),
+        ),
+        Provider<TitleRepository>(
+          create: (c) =>
+              TitleRepository(c.read<AppDatabase>(), c.read<SyncService>()),
         ),
         Provider<MilestoneRepository>(
           create: (c) =>
@@ -56,11 +55,8 @@ Future<void> main() async {
         Provider<AttentionRepository>(
           create: (c) => AttentionRepository(c.read<AppDatabase>()),
         ),
-
       ],
       child: const ThesisTrackApp(),
     ),
-
-
   );
 }

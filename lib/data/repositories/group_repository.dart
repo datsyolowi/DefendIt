@@ -18,7 +18,7 @@ class GroupFailure implements Exception {
 
 class GroupRepository {
   GroupRepository({FirebaseFirestore? db})
-      : _db = db ?? FirebaseFirestore.instance;
+    : _db = db ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _db;
 
@@ -35,7 +35,10 @@ class GroupRepository {
 
   /// Groups that have no adviser yet (adviser "Requests" tab).
   Stream<List<Group>> watchOpenGroups() {
-    return _col.where('adviserUid', isNull: true).snapshots().map(_toSortedList);
+    return _col
+        .where('adviserUid', isNull: true)
+        .snapshots()
+        .map(_toSortedList);
   }
 
   List<Group> _toSortedList(QuerySnapshot<Map<String, dynamic>> snap) {
@@ -51,13 +54,16 @@ class GroupRepository {
     required String thesisTitle,
     required List<String> members, // leader first
   }) async {
-    final cleaned =
-    members.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
+    final cleaned = members
+        .map((m) => m.trim())
+        .where((m) => m.isNotEmpty)
+        .toList();
 
     if (cleaned.length < Limits.minGroupMembers ||
         cleaned.length > Limits.maxGroupMembers) {
       throw GroupFailure(
-          'A group needs ${Limits.minGroupMembers} to ${Limits.maxGroupMembers} members.');
+        'A group needs ${Limits.minGroupMembers} to ${Limits.maxGroupMembers} members.',
+      );
     }
     final lower = cleaned.map((m) => m.toLowerCase()).toSet();
     if (lower.length != cleaned.length) {
@@ -75,7 +81,8 @@ class GroupRepository {
         .get();
     if (existing.docs.isNotEmpty) {
       throw GroupFailure(
-          'You already belong to a group. Each student can only be in one group.');
+        'You already belong to a group. Each student can only be in one group.',
+      );
     }
 
     // The document id is the leader's uid, so a second group for the same
@@ -107,6 +114,16 @@ class GroupRepository {
     return group;
   }
 
+  /// Used at sign-up: checks that a teammate code exists before anything is saved.
+  Future<void> verifyTeammateCode(String rawCode) async {
+    await _requireOnline();
+    final code = rawCode.trim().toUpperCase();
+    final snap = await _col.where('code', isEqualTo: code).limit(1).get();
+    if (snap.docs.isEmpty) {
+      throw GroupFailure('No group found with that code.');
+    }
+  }
+
   /// Students only: join a teammate's group with its code.
   Future<void> joinByCode(AppUser user, String rawCode) async {
     if (user.role != UserRole.student) {
@@ -121,12 +138,16 @@ class GroupRepository {
     }
     final doc = snap.docs.first;
 
-    final mine =
-    await _col.where('memberUids', arrayContains: user.uid).limit(1).get();
+    final mine = await _col
+        .where('memberUids', arrayContains: user.uid)
+        .limit(1)
+        .get();
     if (mine.docs.isNotEmpty) {
-      throw GroupFailure(mine.docs.first.id == doc.id
-          ? 'You are already in this group.'
-          : 'You already belong to a group. Each student can only be in one group.');
+      throw GroupFailure(
+        mine.docs.first.id == doc.id
+            ? 'You are already in this group.'
+            : 'You already belong to a group. Each student can only be in one group.',
+      );
     }
 
     await doc.reference.update({
@@ -159,7 +180,8 @@ class GroupRepository {
       final count = (userSnap.data()?['adviserGroupCount'] as int?) ?? 0;
       if (count >= Limits.maxAdviserGroups) {
         throw GroupFailure(
-            'You already advise ${Limits.maxAdviserGroups} groups, the maximum.');
+          'You already advise ${Limits.maxAdviserGroups} groups, the maximum.',
+        );
       }
 
       tx.update(groupRef, {
@@ -176,7 +198,8 @@ class GroupRepository {
     final results = await Connectivity().checkConnectivity();
     if (results.every((r) => r == ConnectivityResult.none)) {
       throw GroupFailure(
-          'You\'re offline. Connect to the internet and try again.');
+        'You\'re offline. Connect to the internet and try again.',
+      );
     }
   }
 
@@ -184,8 +207,10 @@ class GroupRepository {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
     final rnd = Random.secure();
     for (var i = 0; i < 5; i++) {
-      final code =
-      List.generate(6, (_) => chars[rnd.nextInt(chars.length)]).join();
+      final code = List.generate(
+        6,
+        (_) => chars[rnd.nextInt(chars.length)],
+      ).join();
       final taken = await _col.where('code', isEqualTo: code).limit(1).get();
       if (taken.docs.isEmpty) return code;
     }

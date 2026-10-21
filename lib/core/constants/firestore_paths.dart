@@ -1,8 +1,7 @@
-
-
 class FirestorePaths {
   FirestorePaths._();
 
+  static const studentNumbers = 'studentNumbers';
   static const users = 'users';
   static const groups = 'groups';
   static const slots = 'slots';

@@ -127,7 +127,7 @@ class _MilestoneBoardState extends State<MilestoneBoard> {
             }
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
               children: [
                 _ProgressCard(
                   ratio: completion / items.length,
@@ -286,7 +286,10 @@ class _SummaryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
+              Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Icon(Icons.checklist_rounded,
                       size: 16, color: AppColors.muted),
@@ -295,7 +298,7 @@ class _SummaryCard extends StatelessWidget {
                     total == 0 ? 'No tasks yet' : '$done of $total tasks done',
                     style: text.bodySmall,
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Icon(Icons.event_rounded,
                       size: 16,
                       color: overdue ? AppColors.error : AppColors.muted),

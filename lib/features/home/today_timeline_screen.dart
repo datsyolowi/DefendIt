@@ -99,7 +99,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
                   hasScrollBody: false,
                   child: ErrorView(
                     message:
-                    'Could not load your schedule. Check your connection.',
+                        'Could not load your schedule. Check your connection.',
                   ),
                 )
               else if (_c.loading)
@@ -109,7 +109,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate(_body()),
                   ),
@@ -131,6 +131,8 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
         : '${_c.groups.length}';
 
     return [
+      Text('At a glance', style: text.titleMedium),
+      const SizedBox(height: 12),
       Row(
         children: [
           Expanded(
@@ -165,7 +167,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
           icon: Icons.hourglass_top_rounded,
           color: AppColors.amber,
           message:
-          'A group of yours is waiting for an adviser to accept it. You\'ll see their slots here once they do.',
+              'A group of yours is waiting for an adviser to accept it. You\'ll see their slots here once they do.',
         ),
       ],
       if (isAdviser && _c.groups.isEmpty) ...[
@@ -174,7 +176,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
           icon: Icons.inbox_rounded,
           color: AppColors.indigo,
           message:
-          'No groups yet. Open Groups, then the Requests tab, to accept your first group.',
+              'No groups yet. Open Groups, then the Requests tab, to accept your first group.',
         ),
       ],
       if (bookings.length > 1) ...[
@@ -186,7 +188,7 @@ class _TodayTimelineScreenState extends State<TodayTimelineScreen> {
             padding: const EdgeInsets.only(bottom: 10),
             child: InkWell(
               onTap: () => _openConsultation(slot),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(18),
               child: _UpcomingRow(slot: slot, isAdviser: isAdviser),
             ),
           ),
@@ -212,8 +214,9 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstName =
-    user.name.trim().isEmpty ? 'there' : user.name.trim().split(' ').first;
+    final firstName = user.name.trim().isEmpty
+        ? 'there'
+        : user.name.trim().split(' ').first;
     final role = user.role == UserRole.adviser ? 'Adviser' : 'Student';
     final date = DateFormat('EEEE, MMMM d').format(DateTime.now());
 
@@ -222,52 +225,74 @@ class _Header extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.indigoDark, AppColors.indigo],
+          colors: [Color(0xFFDCEDE5), Color(0xFFF0F5EE), Color(0xFFE8EDE1)],
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       padding: EdgeInsets.fromLTRB(
         20,
-        MediaQuery.of(context).padding.top + 16,
+        MediaQuery.of(context).padding.top + 18,
         20,
-        24,
+        22,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${DateFormatters.greeting()},',
-                      style: AppTextStyles.body.copyWith(color: Colors.white70),
-                    ),
-                    Text(
-                      firstName,
-                      style: AppTextStyles.h1.copyWith(color: Colors.white),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$role · $date',
-                      style: AppTextStyles.caption.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'YOUR THESIS, IN FOCUS',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.indigo,
+                    letterSpacing: 1.5,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SyncChip(onDark: true),
-                  const SizedBox(width: 10),
-                  _ProfileMenu(user: user),
-                ],
+              const SizedBox(width: 12),
+              _ProfileMenu(user: user),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${DateFormatters.greeting()},',
+            style: AppTextStyles.body.copyWith(color: AppColors.muted),
+          ),
+          Text(
+            firstName,
+            style: AppTextStyles.h1.copyWith(
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.indigoDark,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  role,
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
+              const SyncChip(),
+              Text(date, style: AppTextStyles.caption.copyWith(fontSize: 11)),
             ],
           ),
           const SizedBox(height: 20),
@@ -288,8 +313,9 @@ class _ProfileMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial =
-    user.name.trim().isEmpty ? '?' : user.name.trim()[0].toUpperCase();
+    final initial = user.name.trim().isEmpty
+        ? '?'
+        : user.name.trim()[0].toUpperCase();
 
     return PopupMenuButton<String>(
       tooltip: 'Account',
@@ -303,7 +329,10 @@ class _ProfileMenu extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(user.name, style: AppTextStyles.title.copyWith(fontSize: 14)),
+              Text(
+                user.name,
+                style: AppTextStyles.title.copyWith(fontSize: 14),
+              ),
               Text(user.email, style: AppTextStyles.caption),
             ],
           ),
@@ -320,13 +349,28 @@ class _ProfileMenu extends StatelessWidget {
           ),
         ),
       ],
-      child: CircleAvatar(
-        radius: 22,
-        backgroundColor: AppColors.amber,
-        foregroundColor: AppColors.ink,
-        child: Text(
-          initial,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.indigo.withValues(alpha: 0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.indigoDark.withValues(alpha: 0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 21,
+          backgroundColor: AppColors.indigoDark,
+          foregroundColor: AppColors.amber,
+          child: Text(
+            initial,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          ),
         ),
       ),
     );
@@ -351,12 +395,17 @@ class _HeroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF103C3B), Color(0xFF216F62)],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
+            color: AppColors.indigoDark.withValues(alpha: 0.18),
+            blurRadius: 28,
             offset: const Offset(0, 8),
           ),
         ],
@@ -365,24 +414,24 @@ class _HeroCard extends StatelessWidget {
         color: Colors.transparent,
         child: c.loading
             ? const SizedBox(
-          height: 90,
-          child: Center(
-            child: CircularProgressIndicator(color: AppColors.indigo),
-          ),
-        )
+                height: 90,
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.amber),
+                ),
+              )
             : (c.upcomingBookings.isEmpty
-            ? Padding(
-          padding: const EdgeInsets.all(20),
-          child: _emptyHero(),
-        )
-            : InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => onOpenConsultation(c.upcomingBookings.first),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: _nextHero(c.upcomingBookings.first),
-          ),
-        )),
+                  ? Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: _emptyHero(),
+                    )
+                  : InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () => onOpenConsultation(c.upcomingBookings.first),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: _nextHero(c.upcomingBookings.first),
+                      ),
+                    )),
       ),
     );
   }
@@ -395,21 +444,24 @@ class _HeroCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
               'NEXT CONSULTATION',
               style: AppTextStyles.caption.copyWith(
                 letterSpacing: 1.2,
+                color: AppColors.amber,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.amber.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Text(
                 DateFormatters.until(next.start, next.durationMins),
@@ -425,24 +477,24 @@ class _HeroCard extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           DateFormatters.range(next.start, next.durationMins),
-          style: AppTextStyles.h1.copyWith(fontSize: 26),
+          style: AppTextStyles.h1.copyWith(fontSize: 26, color: Colors.white),
         ),
         const SizedBox(height: 2),
         Text(
           DateFormatters.dayHeader(next.start),
-          style: AppTextStyles.body.copyWith(color: AppColors.muted),
+          style: AppTextStyles.body.copyWith(color: const Color(0xFFC3DBD0)),
         ),
         const SizedBox(height: 14),
-        const Divider(height: 1, color: AppColors.border),
+        const Divider(height: 1, color: Color(0xFF497E71)),
         const SizedBox(height: 14),
         Row(
           children: [
-            const Icon(Icons.groups_rounded, size: 18, color: AppColors.indigo),
+            const Icon(Icons.groups_rounded, size: 18, color: AppColors.amber),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 who,
-                style: AppTextStyles.body,
+                style: AppTextStyles.body.copyWith(color: Colors.white),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -465,10 +517,10 @@ class _HeroCard extends StatelessWidget {
       buttonLabel = 'Add availability';
     } else if (noGroups) {
       message =
-      'Create or join a thesis group in the Groups tab to get started.';
+          'Create or join a thesis group in the Groups tab to get started.';
     } else if (waiting) {
       message =
-      'Once an adviser accepts your group, you can book a consultation.';
+          'Once an adviser accepts your group, you can book a consultation.';
     } else {
       message = 'Book a slot with your adviser to get started.';
       buttonLabel = 'Browse slots';
@@ -480,37 +532,48 @@ class _HeroCard extends StatelessWidget {
         Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(7),
               decoration: const BoxDecoration(
-                color: AppColors.indigoTint,
+                color: Color(0xFF345F51),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.event_available_rounded,
-                color: AppColors.indigo,
+                color: AppColors.amber,
+                size: 20,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'No consultations scheduled',
-                style: AppTextStyles.title,
+                style: AppTextStyles.title.copyWith(
+                  color: Colors.white,
+                  fontSize: 15,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Text(
           message,
-          style: AppTextStyles.body.copyWith(color: AppColors.muted),
+          style: AppTextStyles.body.copyWith(fontSize: 12, height: 1.35, color: const Color(0xFFC3DBD0)),
         ),
         if (buttonLabel != null) ...[
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
+                minimumSize: const Size.fromHeight(40),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                textStyle: AppTextStyles.button.copyWith(fontSize: 13),
+                backgroundColor: AppColors.amber,
+                foregroundColor: AppColors.indigoDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               onPressed: onOpenSchedule,
               child: Text(buttonLabel),
@@ -540,24 +603,63 @@ class _StatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: icon == Icons.groups_rounded
+              ? [const Color(0xFFE3F1E9), const Color(0xFFF4F9F4)]
+              : [AppColors.surface, const Color(0xFFF7F9F5)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.indigo.withValues(alpha: 0.10)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.indigoDark.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: AppColors.indigoTint,
-              shape: BoxShape.circle,
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: icon == Icons.groups_rounded
+                  ? AppColors.indigoDark
+                  : AppColors.indigoTint,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 18, color: AppColors.indigo),
+            child: Icon(
+              icon,
+              size: 19,
+              color: icon == Icons.groups_rounded
+                  ? AppColors.amber
+                  : AppColors.indigo,
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(value, style: AppTextStyles.h2),
-          Text(label, style: AppTextStyles.caption),
+          const SizedBox(height: 14),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTextStyles.h1.copyWith(
+                fontSize: 28,
+                letterSpacing: -1,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -578,10 +680,10 @@ class _Notice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +713,7 @@ class _UpcomingRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
@@ -682,29 +784,37 @@ class _AttentionCard extends StatelessWidget {
     final t = e.target;
     final nav = Navigator.of(context);
     if (e.kind == AttentionKind.actionOverdue && t.consultationId != null) {
-      nav.push(MaterialPageRoute(
-        builder: (_) => ConsultationScreen(consultationId: t.consultationId!),
-      ));
+      nav.push(
+        MaterialPageRoute(
+          builder: (_) => ConsultationScreen(consultationId: t.consultationId!),
+        ),
+      );
       return;
     }
     final group = _group(t.groupId);
     if (group == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Open the Groups tab and try again.')));
+        const SnackBar(content: Text('Open the Groups tab and try again.')),
+      );
       return;
     }
     switch (e.kind) {
       case AttentionKind.titlePolish:
       case AttentionKind.titleReview:
-        nav.push(MaterialPageRoute(
-            builder: (_) => TitleIdeasScreen(group: group)));
+        nav.push(
+          MaterialPageRoute(builder: (_) => TitleIdeasScreen(group: group)),
+        );
       default:
-        nav.push(MaterialPageRoute(
-          builder: (_) => t.milestoneId == null
-              ? MilestoneBoardScreen(group: group)
-              : MilestoneDetailScreen(
-              group: group, milestoneId: t.milestoneId!),
-        ));
+        nav.push(
+          MaterialPageRoute(
+            builder: (_) => t.milestoneId == null
+                ? MilestoneBoardScreen(group: group)
+                : MilestoneDetailScreen(
+                    group: group,
+                    milestoneId: t.milestoneId!,
+                  ),
+          ),
+        );
     }
   }
 
@@ -777,18 +887,20 @@ class _AttentionCard extends StatelessWidget {
         final entries = snap.data ?? const <AttentionEntry>[];
         if (entries.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.only(top: 24),
+          padding: const EdgeInsets.only(top: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Needs attention',
-                  style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                'Needs attention',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 12),
               Material(
                 color: AppColors.surface,
                 clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   side: const BorderSide(color: AppColors.border),
                 ),
                 child: Column(
@@ -800,27 +912,38 @@ class _AttentionCard extends StatelessWidget {
                         onTap: () => _open(context, entries[i]),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: _color(entries[i].kind)
-                                      .withValues(alpha: 0.12),
+                                  color: _color(
+                                    entries[i].kind,
+                                  ).withValues(alpha: 0.12),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(_icon(entries[i].kind),
-                                    size: 18, color: _color(entries[i].kind)),
+                                child: Icon(
+                                  _icon(entries[i].kind),
+                                  size: 18,
+                                  color: _color(entries[i].kind),
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(_label(entries[i]),
-                                    style: AppTextStyles.title
-                                        .copyWith(fontSize: 14)),
+                                child: Text(
+                                  _label(entries[i]),
+                                  style: AppTextStyles.title.copyWith(
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
-                              const Icon(Icons.chevron_right_rounded,
-                                  color: AppColors.muted),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.muted,
+                              ),
                             ],
                           ),
                         ),

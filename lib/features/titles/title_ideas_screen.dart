@@ -103,7 +103,7 @@ class _TitleIdeasScreenState extends State<TitleIdeasScreen> {
           final ideas = snap.data!;
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
             children: [
               _GroupHeader(group: widget.group),
               const SizedBox(height: 22),
@@ -216,7 +216,7 @@ class _TitleCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+        padding: const EdgeInsets.fromLTRB(18, 18, 12, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

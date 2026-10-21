@@ -75,7 +75,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               final progress =
                   progressSnap.data ?? const <String, MilestoneProgress>{};
               return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 itemCount: groups.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (_, i) => _GroupProgressCard(

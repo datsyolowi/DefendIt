@@ -49,7 +49,7 @@ class SlotTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+          padding: const EdgeInsets.fromLTRB(18, 18, 12, 18),
           child: Row(
             children: [
               Container(
@@ -137,7 +137,7 @@ class SlotDayList extends StatelessWidget {
     }
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding),
       children: children,
     );
   }

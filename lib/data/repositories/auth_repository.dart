@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/constants/firestore_paths.dart';
 import '../../core/constants/strings.dart';
+import '../../core/utils/student_number.dart';
 import '../models/app_user.dart';
 
 class AuthFailure implements Exception {
@@ -14,8 +15,8 @@ class AuthFailure implements Exception {
 
 class AuthRepository {
   AuthRepository({FirebaseAuth? auth, FirebaseFirestore? db})
-      : _auth = auth ?? FirebaseAuth.instance,
-        _db = db ?? FirebaseFirestore.instance;
+    : _auth = auth ?? FirebaseAuth.instance,
+      _db = db ?? FirebaseFirestore.instance;
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _db;
@@ -45,7 +46,8 @@ class AuthRepository {
       debugPrint('GOOGLE ERROR: code=${e.code} description=${e.description}');
       if (e.code == GoogleSignInExceptionCode.canceled) {
         throw AuthFailure(
-            'Sign-in was canceled or the app is not configured correctly (check SHA-1).');
+          'Sign-in was canceled or the app is not configured correctly (check SHA-1).',
+        );
       }
       throw AuthFailure('Google sign-in failed (${e.code.name}).');
     }
@@ -65,7 +67,7 @@ class AuthRepository {
     return user;
   }
 
-    /// Creates the adviser profile and claims the access code in ONE transaction.
+  /// Creates the adviser profile and claims the access code in ONE transaction.
   /// The security rules accept an adviser profile only together with this claim.
   Future<AppUser> registerAdviser(AppUser user, String rawCode) async {
     final code = rawCode.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
@@ -88,23 +90,75 @@ class AuthRepository {
           'claimedByUid': user.uid,
           'claimedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(
-          userRef,
-          {
-            ...adviser.toMap(),
-            'adviserCode': code,
-            'createdAt': FieldValue.serverTimestamp(),
-          },
-          SetOptions(merge: true),
-        );
+        tx.set(userRef, {
+          ...adviser.toMap(),
+          'adviserCode': code,
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       });
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        throw AuthFailure('That code could not be verified. Check it and try again.');
+        throw AuthFailure(
+          'That code could not be verified. Check it and try again.',
+        );
       }
-      throw AuthFailure('Could not verify the code. Check your connection and try again.');
+      throw AuthFailure(
+        'Could not verify the code. Check your connection and try again.',
+      );
     }
     return adviser;
+  }
+
+  /// Creates the student profile and registers the student number in ONE
+  /// transaction, so a student number can belong to only one account.
+  Future<AppUser> registerStudent(AppUser user, String rawNumber) async {
+    final number = StudentNumber.normalize(rawNumber);
+    if (!StudentNumber.isValid(number)) {
+      throw AuthFailure(
+        'Use the student number format ${StudentNumber.example}, for example 2022-102420.',
+      );
+    }
+
+    final numberRef = _db.collection(FirestorePaths.studentNumbers).doc(number);
+    final userRef = _db.collection(FirestorePaths.users).doc(user.uid);
+    final student = user.copyWith(
+      role: UserRole.student,
+      studentNumber: number,
+    );
+
+    try {
+      await _db.runTransaction((tx) async {
+        final snap = await tx.get(numberRef);
+        final owner = snap.data()?['uid'];
+        if (snap.exists && owner != user.uid) {
+          throw AuthFailure(
+            'That student number is already registered to another account.',
+          );
+        }
+
+        if (!snap.exists) {
+          tx.set(numberRef, {
+            'uid': user.uid,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+
+        tx.set(userRef, {
+          ...student.toMap(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw AuthFailure(
+          'That student number could not be verified. Check it and try again.',
+        );
+      }
+      throw AuthFailure(
+        'Could not save your profile. Check your connection and try again.',
+      );
+    }
+    return student;
   }
 
   Future<void> signOut() async {

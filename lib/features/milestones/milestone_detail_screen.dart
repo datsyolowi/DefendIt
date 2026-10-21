@@ -183,7 +183,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
               final done = tasks.where((t) => t.done).length;
 
               return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
                 children: [
                   _header(m, tasks),
                   if (tasks.isNotEmpty) ...[

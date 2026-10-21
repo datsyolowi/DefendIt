@@ -216,7 +216,7 @@ class _RequestsTab extends StatelessWidget {
           );
         }
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           itemCount: groups.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) => _RequestCard(
@@ -293,7 +293,7 @@ class _GroupList extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       itemCount: groups.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) => _GroupCard(group: groups[i], showCode: showCode),
@@ -364,9 +364,9 @@ class _GroupCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Teammate code: ${group.code}',
+                        Flexible(child: Text('Teammate code: ${group.code}',
                             style: text.titleMedium?.copyWith(
-                                color: AppColors.indigo, letterSpacing: 1.2)),
+                                color: AppColors.indigo, letterSpacing: 0.4))),
                         const SizedBox(width: 8),
                         const Icon(Icons.copy_rounded,
                             size: 16, color: AppColors.indigo),

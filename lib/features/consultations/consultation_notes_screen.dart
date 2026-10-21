@@ -102,7 +102,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           final dirty = _notes.text.trim() != c.notes.trim();
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
               _HeaderCard(c: c),
               const SizedBox(height: 24),
